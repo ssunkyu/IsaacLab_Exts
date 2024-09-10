@@ -74,11 +74,11 @@ class PickSmState:
 class PickSmWaitTime:
     """Additional wait times (in s) for states for before switching."""
 
-    REST = wp.constant(0.2)
-    APPROACH_ABOVE_OBJECT = wp.constant(0.5)
-    APPROACH_OBJECT = wp.constant(0.6)
-    GRASP_OBJECT = wp.constant(0.3)
-    LIFT_OBJECT = wp.constant(1.0)
+    REST = wp.constant(0.3)
+    APPROACH_ABOVE_OBJECT = wp.constant(2.5)
+    APPROACH_OBJECT = wp.constant(2.5)
+    GRASP_OBJECT = wp.constant(1.0)
+    LIFT_OBJECT = wp.constant(2.0)
 
 
 @wp.kernel
@@ -184,8 +184,10 @@ class PickAndLiftSm:
         # approach above object offset
         self.offset = torch.zeros((self.num_envs, 7), device=self.device)
         self.offset[:, 2] = 0.1
-        self.offset[:, -1] = 1.0  # warp expects quaternion as (x, y, z, w)
-
+        # self.offset[:, -1] = 1.0  # warp expects quaternion as (x, y, z, w)
+        self.offset[:, -1] = 0.7071068  # warp expects quaternion as (x, y, z, w)
+        self.offset[:, -2] = -0.7071068  # warp expects quaternion as (x, y, z, w)
+        
         # convert to warp
         self.sm_dt_wp = wp.from_torch(self.sm_dt, wp.float32)
         self.sm_state_wp = wp.from_torch(self.sm_state, wp.int32)
@@ -255,7 +257,12 @@ def main():
     actions[:, 3] = 1.0
     # desired object orientation (we only do position control of object)
     desired_orientation = torch.zeros((env.unwrapped.num_envs, 4), device=env.unwrapped.device)
-    desired_orientation[:, 1] = 1.0
+    desired_orientation[:, 0] = 1.0
+    desired_orientation_object = torch.zeros((env.unwrapped.num_envs, 4), device=env.unwrapped.device)
+    # desired_orientation_object[:, 0] = 1.0
+    desired_orientation_object[:, 0] = 0.7071068
+    desired_orientation_object[:, 3] = -0.7071068
+
     # create state machine
     pick_sm = PickAndLiftSm(env_cfg.sim.dt * env_cfg.decimation, env.unwrapped.num_envs, env.unwrapped.device)
 
@@ -279,13 +286,13 @@ def main():
             # advance state machine
             actions = pick_sm.compute(
                 torch.cat([tcp_rest_position, tcp_rest_orientation], dim=-1),
-                torch.cat([object_position, desired_orientation], dim=-1),
+                torch.cat([object_position, desired_orientation_object], dim=-1),
                 torch.cat([desired_position, desired_orientation], dim=-1),
             )
-            actions = torch.cat([torch.zeros([env.unwrapped.num_envs, 6], device=args_cli.device),
-                                actions,
-                                torch.zeros([env.unwrapped.num_envs, 2], device=args_cli.device)],
-                                dim=1)
+            # actions = torch.cat([torch.zeros([env.unwrapped.num_envs, 6], device=args_cli.device),
+            #                     actions,
+            #                     torch.zeros([env.unwrapped.num_envs, 2], device=args_cli.device)],
+            #                     dim=1)
 
             # reset state machine
             if dones.any():

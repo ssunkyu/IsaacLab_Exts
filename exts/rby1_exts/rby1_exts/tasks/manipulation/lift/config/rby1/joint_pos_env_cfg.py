@@ -11,7 +11,7 @@ from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
 from omni.isaac.lab.utils import configclass
 from omni.isaac.lab.utils.assets import ISAAC_NUCLEUS_DIR
 
-from omni.isaac.lab_tasks.manager_based.manipulation.lift import mdp
+from rby1_exts.tasks.manipulation.lift import mdp
 from rby1_exts.tasks.manipulation.lift.lift_env_cfg import LiftEnvCfg
 
 ##
@@ -30,31 +30,31 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         # Set Rby1 as robot
         self.scene.robot = RBY1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
-        self.actions.torso_action = mdp.JointPositionActionCfg(
-            asset_name="robot", joint_names=["torso_.*"], scale=0.1, use_default_offset=False
-        )
+        # self.actions.torso_action = mdp.JointPositionActionCfg(
+        #     asset_name="robot", joint_names=["torso_.*"], scale=0.1, use_default_offset=False
+        # )
 
         # Set actions for the specific robot type (Rby1)
         self.actions.arm_action = mdp.JointPositionActionCfg(
-            asset_name="robot", joint_names=["right_joint.*"], scale=0.5, use_default_offset=True
+            asset_name="robot", joint_names=["right_arm_.*"], scale=0.5, use_default_offset=True
         )
         self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",
             joint_names=["gripper_finger_r.*"],
-            open_command_expr={"gripper_finger_r.*": 0.05},
+            open_command_expr={"gripper_finger_r.*": 0.04},
             close_command_expr={"gripper_finger_r.*": 0.0},
         )
-        self.actions.wheel_action = mdp.JointVelocityActionCfg(
-            asset_name="robot",
-            joint_names=["right_wheel", "left_wheel"], scale=1.0, use_default_offset=True
-        )
+        # self.actions.wheel_action = mdp.JointVelocityActionCfg(
+        #     asset_name="robot",
+        #     joint_names=["right_wheel", "left_wheel"], scale=1.0, use_default_offset=True
+        # )
         # Set the body name for the end effector
         self.commands.object_pose.body_name = "ee_right"
 
         # Set Cube as object
         self.scene.object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[1.1, 0, 0.905], rot=[1, 0, 0, 0]),
             spawn=UsdFileCfg(
                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
                 scale=(0.8, 0.8, 0.8),
@@ -74,7 +74,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         marker_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
         marker_cfg.prim_path = "/Visuals/FrameTransformer"
         self.scene.ee_frame = FrameTransformerCfg(
-            prim_path="{ENV_REGEX_NS}/Robot/link_torso_0",
+            prim_path="{ENV_REGEX_NS}/Robot/base",
             debug_vis=False,
             visualizer_cfg=marker_cfg,
             target_frames=[
@@ -82,7 +82,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
                     prim_path="{ENV_REGEX_NS}/Robot/ee_right",
                     name="end_effector",
                     offset=OffsetCfg(
-                        pos=[0.0, 0.0, 0.1034],
+                        pos=[0.0, 0.0, -0.2034],
                     ),
                 ),
             ],

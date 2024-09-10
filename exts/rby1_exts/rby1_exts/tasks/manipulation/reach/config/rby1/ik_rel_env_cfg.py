@@ -6,38 +6,38 @@
 from omni.isaac.lab.controllers.differential_ik_cfg import DifferentialIKControllerCfg
 from omni.isaac.lab.envs.mdp.actions.actions_cfg import DifferentialInverseKinematicsActionCfg
 from omni.isaac.lab.utils import configclass
-from omni.isaac.lab.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
 
 from . import joint_pos_env_cfg
 
 ##
 # Pre-defined configs
 ##
-from rby1_assets.rby1 import RBY1_CFG  # isort: skip
+from rby1_assets import RBY1_CFG  # isort: skip
+
 
 @configclass
-class Rby1CubeLiftEnvCfg(joint_pos_env_cfg.Rby1CubeLiftEnvCfg):
+class Rby1ReachEnvCfg(joint_pos_env_cfg.Rby1ReachEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
 
         # Set Rby1 as robot
         # We switch here to a stiffer PD controller for IK tracking to be better.
-        self.scene.robot = RBY1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot",
-                                            init_state=ArticulationCfg.InitialStateCfg(pos=[0.0, 0, 0.0], rot=[1.0, 0, 0, 0.0]))
+        self.scene.robot = RBY1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
         # Set actions for the specific robot type (Rby1)
         self.actions.arm_action = DifferentialInverseKinematicsActionCfg(
             asset_name="robot",
             joint_names=["right_arm_.*"],
             body_name="ee_right",
-            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
-            body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
+            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
+            scale=0.5,
+            body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.107]),
         )
 
 
 @configclass
-class Rby1CubeLiftEnvCfg_PLAY(Rby1CubeLiftEnvCfg):
+class Rby1ReachEnvCfg_PLAY(Rby1ReachEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
