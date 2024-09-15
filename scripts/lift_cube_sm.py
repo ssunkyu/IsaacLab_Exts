@@ -74,11 +74,11 @@ class PickSmState:
 class PickSmWaitTime:
     """Additional wait times (in s) for states for before switching."""
 
-    REST = wp.constant(0.3)
-    APPROACH_ABOVE_OBJECT = wp.constant(2.5)
-    APPROACH_OBJECT = wp.constant(2.5)
-    GRASP_OBJECT = wp.constant(1.0)
-    LIFT_OBJECT = wp.constant(2.0)
+    REST = wp.constant(0.1)
+    APPROACH_ABOVE_OBJECT = wp.constant(2.0)
+    APPROACH_OBJECT = wp.constant(3.0)
+    GRASP_OBJECT = wp.constant(1.5)
+    LIFT_OBJECT = wp.constant(1.0)
 
 
 @wp.kernel
@@ -111,7 +111,7 @@ def infer_state_machine(
         gripper_state[tid] = GripperState.OPEN
         # TODO: error between current and desired ee pose below threshold
         # wait for a while
-        if sm_wait_time[tid] >= PickSmWaitTime.APPROACH_OBJECT:
+        if sm_wait_time[tid] >= PickSmWaitTime.APPROACH_ABOVE_OBJECT:
             # move to next state and reset wait time
             sm_state[tid] = PickSmState.APPROACH_OBJECT
             sm_wait_time[tid] = 0.0
@@ -184,10 +184,8 @@ class PickAndLiftSm:
         # approach above object offset
         self.offset = torch.zeros((self.num_envs, 7), device=self.device)
         self.offset[:, 2] = 0.1
-        # self.offset[:, -1] = 1.0  # warp expects quaternion as (x, y, z, w)
-        self.offset[:, -1] = 0.7071068  # warp expects quaternion as (x, y, z, w)
-        self.offset[:, -2] = -0.7071068  # warp expects quaternion as (x, y, z, w)
-        
+        self.offset[:, -1] = 1.0  # warp expects quaternion as (x, y, z, w)
+
         # convert to warp
         self.sm_dt_wp = wp.from_torch(self.sm_dt, wp.float32)
         self.sm_state_wp = wp.from_torch(self.sm_state, wp.int32)
@@ -254,15 +252,15 @@ def main():
 
     # create action buffers (position + quaternion)
     actions = torch.zeros(env.unwrapped.action_space.shape, device=env.unwrapped.device)
-    actions[:, 3] = 1.0
+    # actions[:, 3] = 1.0
+
+    default_joint_pos = env.unwrapped.scene["robot"].data.default_joint_pos.clone()
+    print(default_joint_pos)
+    actions[:, 0:6] = default_joint_pos[:, 2:8]
+
     # desired object orientation (we only do position control of object)
     desired_orientation = torch.zeros((env.unwrapped.num_envs, 4), device=env.unwrapped.device)
     desired_orientation[:, 0] = 1.0
-    desired_orientation_object = torch.zeros((env.unwrapped.num_envs, 4), device=env.unwrapped.device)
-    # desired_orientation_object[:, 0] = 1.0
-    desired_orientation_object[:, 0] = 0.7071068
-    desired_orientation_object[:, 3] = -0.7071068
-
     # create state machine
     pick_sm = PickAndLiftSm(env_cfg.sim.dt * env_cfg.decimation, env.unwrapped.num_envs, env.unwrapped.device)
 
@@ -274,25 +272,52 @@ def main():
 
             # observations
             # -- end-effector frame
-            ee_frame_sensor = env.unwrapped.scene["ee_frame"]
-            tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
+            # right arm
+            ee_frame_sensor = env.unwrapped.scene["right_ee_frame"]
+            # tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
+            tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone()
             tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
             # -- object frame
-            object_data: RigidObjectData = env.unwrapped.scene["object"].data
+            object_data: RigidObjectData = env.unwrapped.scene["right_object"].data
             object_position = object_data.root_pos_w - env.unwrapped.scene.env_origins
+            # object_position = object_data.root_pos_w
             # -- target object frame
-            desired_position = env.unwrapped.command_manager.get_command("object_pose")[..., :3]
+            desired_position = env.unwrapped.command_manager.get_command("right_object_pose")[..., :3]
 
             # advance state machine
-            actions = pick_sm.compute(
+            # actions of right arm
+            actions[:, 6:14] = pick_sm.compute(
                 torch.cat([tcp_rest_position, tcp_rest_orientation], dim=-1),
-                torch.cat([object_position, desired_orientation_object], dim=-1),
+                torch.cat([object_position, desired_orientation], dim=-1),
                 torch.cat([desired_position, desired_orientation], dim=-1),
             )
-            # actions = torch.cat([torch.zeros([env.unwrapped.num_envs, 6], device=args_cli.device),
-            #                     actions,
-            #                     torch.zeros([env.unwrapped.num_envs, 2], device=args_cli.device)],
-            #                     dim=1)
+
+            ##########
+            # left arm
+            # ee_frame_sensor = env.unwrapped.scene["left_ee_frame"]
+            # # tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
+            # tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone()
+            # tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
+            # # -- object frame
+            # object_data: RigidObjectData = env.unwrapped.scene["left_object"].data
+            # object_position = object_data.root_pos_w - env.unwrapped.scene.env_origins
+            # # object_position = object_data.root_pos_w
+            # # -- target object frame
+            # desired_position = env.unwrapped.command_manager.get_command("left_object_pose")[..., :3]
+
+            # # advance state machine
+            # # actions of left arms
+            # actions[:, 14:22] = pick_sm.compute(
+            #     torch.cat([tcp_rest_position, tcp_rest_orientation], dim=-1),
+            #     torch.cat([object_position, desired_orientation], dim=-1),
+            #     torch.cat([desired_position, desired_orientation], dim=-1),
+            # )
+
+            # print(actions)
+            # print(actions[0,0:3], actions[0,3:7])
+            # print(object_position[0], desired_orientation[0])
+            # print(desired_position[0], desired_orientation[0])
+            # print(actions[0,-1])
 
             # reset state machine
             if dones.any():

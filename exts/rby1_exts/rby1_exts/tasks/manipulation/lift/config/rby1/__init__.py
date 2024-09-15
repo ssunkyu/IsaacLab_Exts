@@ -57,12 +57,12 @@ gym.register(
 # Inverse Kinematics - Relative Pose Control
 ##
 
-gym.register(
-    id="Isaac-Lift-Cube-Rby1-IK-Rel-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
-    kwargs={
-        "env_cfg_entry_point": ik_rel_env_cfg.Rby1CubeLiftEnvCfg,
-        "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc.json"),
-    },
-    disable_env_checker=True,
-)
+# gym.register(
+#     id="Isaac-Lift-Cube-Rby1-IK-Rel-v0",
+#     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+#     kwargs={
+#         "env_cfg_entry_point": ik_rel_env_cfg.Rby1CubeLiftEnvCfg,
+#         "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc.json"),
+#     },
+#     disable_env_checker=True,
+# )

@@ -38,21 +38,23 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # robots: will be populated by agent env cfg
     robot: ArticulationCfg = MISSING
     # end-effector sensor: will be populated by agent env cfg
-    ee_frame: FrameTransformerCfg = MISSING
+    right_ee_frame: FrameTransformerCfg = MISSING
+    left_ee_frame: FrameTransformerCfg = MISSING
     # target object: will be populated by agent env cfg
-    object: RigidObjectCfg = MISSING
+    right_object: RigidObjectCfg = MISSING
+    left_object: RigidObjectCfg = MISSING
 
     # Table
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[0.95, 0, 0.75], rot=[0.707, 0, 0, 0.707]),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[1.15, 0, 0.95], rot=[0.707, 0, 0, 0.707]),
         spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd"),
     )
 
     # plane
     plane = AssetBaseCfg(
         prim_path="/World/GroundPlane",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[0, 0, -0.3]),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[0, 0, -0.1]),
         spawn=GroundPlaneCfg(),
     )
 
@@ -72,13 +74,22 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
 class CommandsCfg:
     """Command terms for the MDP."""
 
-    object_pose = mdp.UniformPoseCommandCfg(
+    right_object_pose = mdp.UniformPoseCommandCfg(
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
         resampling_time_range=(10.0, 10.0),
         debug_vis=True,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.4, 0.55), pos_y=(-0.25, 0.0), pos_z=(0.95, 1.15), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
+            pos_x=(0.5, 0.7), pos_y=(-0.20, -0.0), pos_z=(1.0, 1.10), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
+        ),
+    )
+    left_object_pose = mdp.UniformPoseCommandCfg(
+        asset_name="robot",
+        body_name=MISSING,  # will be set by agent env cfg
+        resampling_time_range=(10.0, 10.0),
+        debug_vis=True,
+        ranges=mdp.UniformPoseCommandCfg.Ranges(
+            pos_x=(0.5, 0.7), pos_y=(-0.20, -0.0), pos_z=(1.0, 1.10), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
         ),
     )
 
@@ -88,10 +99,12 @@ class ActionsCfg:
     """Action specifications for the MDP."""
 
     # will be set by agent env cfg
-    # torso_action: mdp.JointPositionActionCfg = MISSING
-    arm_action: mdp.JointPositionActionCfg = MISSING
-    gripper_action: mdp.BinaryJointPositionActionCfg = MISSING
-    # wheel_action: mdp.JointVelocityActionCfg = MISSING
+    torso_action: mdp.JointPositionActionCfg = MISSING
+    right_arm_action: mdp.JointPositionActionCfg = MISSING
+    right_gripper_action: mdp.BinaryJointPositionActionCfg = MISSING
+    left_arm_action: mdp.JointPositionActionCfg = MISSING
+    left_gripper_action: mdp.BinaryJointPositionActionCfg = MISSING
+    wheel_action: mdp.JointVelocityActionCfg = MISSING
 
 
 @configclass
@@ -104,8 +117,10 @@ class ObservationsCfg:
 
         joint_pos = ObsTerm(func=mdp.joint_pos_rel)
         joint_vel = ObsTerm(func=mdp.joint_vel_rel)
-        object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
-        target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
+        right_object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame, params={"object_cfg": SceneEntityCfg("right_object")})
+        left_object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame, params={"object_cfg": SceneEntityCfg("left_object")})
+        right_target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "right_object_pose"})
+        left_target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "left_object_pose"})
         actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):
@@ -122,13 +137,23 @@ class EventCfg:
 
     reset_all = EventTerm(func=mdp.reset_scene_to_default, mode="reset")
 
-    reset_object_position = EventTerm(
+    reset_right_object_position = EventTerm(
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.8, -0.6), "y": (-0.4, -0.2), "z": (0.0, 0.0)},
+            "pose_range": {"x": (-0.05, 0.10), "y": (-0.15, 0.05), "z": (0.0, 0.0)},
             "velocity_range": {},
-            "asset_cfg": SceneEntityCfg("object", body_names="Object"),
+            "asset_cfg": SceneEntityCfg("right_object", body_names="right_Object"),
+        },
+    )
+
+    reset_left_object_position = EventTerm(
+        func=mdp.reset_root_state_uniform,
+        mode="reset",
+        params={
+            "pose_range": {"x": (-0.05, 0.10), "y": (-0.15, 0.05), "z": (0.0, 0.0)},
+            "velocity_range": {},
+            "asset_cfg": SceneEntityCfg("left_object", body_names="left_Object"),
         },
     )
 
@@ -137,21 +162,39 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
+    right_reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1, "object_cfg": SceneEntityCfg("right_object"),
+                                                                         "ee_frame_cfg": SceneEntityCfg("left_ee_frame")}, weight=1.0)
+    left_reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1, "object_cfg": SceneEntityCfg("left_object"),
+                                                                        "ee_frame_cfg": SceneEntityCfg("right_ee_frame")}, weight=1.0)
 
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04}, weight=15.0)
+    right_lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04,
+                                                                      "object_cfg": SceneEntityCfg("right_object")}, weight=15.0)
+    left_lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04,
+                                                                     "object_cfg": SceneEntityCfg("left_object")}, weight=15.0)
 
-    object_goal_tracking = RewTerm(
+    right_object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},
+        params={"std": 0.3, "minimal_height": 0.04, "command_name": "right_object_pose", "object_cfg": SceneEntityCfg("right_object")},
         weight=16.0,
     )
 
-    object_goal_tracking_fine_grained = RewTerm(
+    left_object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},
-        weight=5.0,
+        params={"std": 0.3, "minimal_height": 0.04, "command_name": "left_object_pose", "object_cfg": SceneEntityCfg("left_object")},
+        weight=16.0,
     )
+
+    # right_object_goal_tracking_fine_grained = RewTerm(
+    #     func=mdp.object_goal_distance,
+    #     params={"std": 0.05, "minimal_height": 0.04, "command_name": "right_object_pose", "object_cfg": SceneEntityCfg("right_object")},
+    #     weight=5.0,
+    # )
+
+    # left_object_goal_tracking_fine_grained = RewTerm(
+    #     func=mdp.object_goal_distance,
+    #     params={"std": 0.05, "minimal_height": 0.04, "command_name": "left_object_pose", "object_cfg": SceneEntityCfg("left_object")},
+    #     weight=5.0,
+    # )
 
     # action penalty
     action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
@@ -169,8 +212,11 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
+    right_object_dropping = DoneTerm(
+        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("right_object")}
+    )
+    left_object_dropping = DoneTerm(
+        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("left_object")}
     )
 
 
@@ -197,7 +243,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=4096, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=100, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()

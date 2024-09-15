@@ -24,15 +24,24 @@ class Rby1CubeLiftEnvCfg(joint_pos_env_cfg.Rby1CubeLiftEnvCfg):
         # Set Rby1 as robot
         # We switch here to a stiffer PD controller for IK tracking to be better.
         self.scene.robot = RBY1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot",
-                                            init_state=ArticulationCfg.InitialStateCfg(pos=[0.0, 0, 0.0], rot=[1.0, 0, 0, 0.0]))
+                                            )
+                                            # init_state=ArticulationCfg.InitialStateCfg(pos=[0.2, 0, 0.25], rot=[1.0, 0, 0, 0.0]))
 
         # Set actions for the specific robot type (Rby1)
-        self.actions.arm_action = DifferentialInverseKinematicsActionCfg(
+        self.actions.right_arm_action = DifferentialInverseKinematicsActionCfg(
             asset_name="robot",
-            joint_names=["right_arm_.*"],
+            joint_names=["right_arm_0", "right_arm_1", "right_arm_2", "right_arm_3", "right_arm_4", "right_arm_5", "right_arm_6"],
             body_name="ee_right",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
-            body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.0]),
+            body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, -0.17]),
+        )
+
+        self.actions.left_arm_action = DifferentialInverseKinematicsActionCfg(
+            asset_name="robot",
+            joint_names=["left_arm_0", "left_arm_1", "left_arm_2", "left_arm_3", "left_arm_4", "left_arm_5", "left_arm_6"],
+            body_name="ee_left",
+            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
+            body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, -0.17]),
         )
 
 
