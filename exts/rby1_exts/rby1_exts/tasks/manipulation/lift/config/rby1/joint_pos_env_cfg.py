@@ -67,7 +67,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         # Set Cube as object
         self.scene.right_object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/right_Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, -0.15, 1.0], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.50, -0.15, 1.05], rot=[1, 0, 0, 0]),
             spawn=UsdFileCfg(
                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
                 scale=(0.8, 0.8, 0.8),
@@ -83,7 +83,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         )
         self.scene.left_object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/left_Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0.15, 1.0], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.50, 0.15, 1.05], rot=[1, 0, 0, 0]),
             spawn=UsdFileCfg(
                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
                 scale=(0.8, 0.8, 0.8),

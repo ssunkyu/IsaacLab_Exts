@@ -40,21 +40,30 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # end-effector sensor: will be populated by agent env cfg
     right_ee_frame: FrameTransformerCfg = MISSING
     left_ee_frame: FrameTransformerCfg = MISSING
+    
+    # right_object_frame: FrameTransformerCfg = MISSING
+    # left_object_frame: FrameTransformerCfg = MISSING
+
     # target object: will be populated by agent env cfg
     right_object: RigidObjectCfg = MISSING
     left_object: RigidObjectCfg = MISSING
 
     # Table
+    # table = AssetBaseCfg(
+    #     prim_path="{ENV_REGEX_NS}/Table",
+    #     init_state=AssetBaseCfg.InitialStateCfg(pos=[0.75, 0, 0.95], rot=[1.0, 0, 0, 0]),
+    #     spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd"),
+    # )
     table = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/Table",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[1.15, 0, 0.95], rot=[0.707, 0, 0, 0.707]),
-        spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd"),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[0.60, 0.3, 0.95], rot=[0.707, 0, 0, -0.707]),
+        spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/ThorlabsTable/table_instanceable.usd"),
     )
 
     # plane
     plane = AssetBaseCfg(
         prim_path="/World/GroundPlane",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[0, 0, -0.1]),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[0, 0, 0]),
         spawn=GroundPlaneCfg(),
     )
 
@@ -80,7 +89,7 @@ class CommandsCfg:
         resampling_time_range=(10.0, 10.0),
         debug_vis=True,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.5, 0.7), pos_y=(-0.20, -0.0), pos_z=(1.0, 1.10), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
+            pos_x=(0.4, 0.6), pos_y=(-0.20, -0.0), pos_z=(1.0, 1.10), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
         ),
     )
     left_object_pose = mdp.UniformPoseCommandCfg(
@@ -89,7 +98,7 @@ class CommandsCfg:
         resampling_time_range=(10.0, 10.0),
         debug_vis=True,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.5, 0.7), pos_y=(-0.20, -0.0), pos_z=(1.0, 1.10), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
+            pos_x=(0.4, 0.6), pos_y=(0.0, 0.2), pos_z=(1.0, 1.10), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
         ),
     )
 
@@ -141,7 +150,7 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.05, 0.10), "y": (-0.15, 0.05), "z": (0.0, 0.0)},
+            "pose_range": {"x": (0.0, 0.15), "y": (-0.15, 0.05), "z": (0.0, 0.0)},
             "velocity_range": {},
             "asset_cfg": SceneEntityCfg("right_object", body_names="right_Object"),
         },
@@ -151,7 +160,7 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.05, 0.10), "y": (-0.15, 0.05), "z": (0.0, 0.0)},
+            "pose_range": {"x": (0.0, 0.15), "y": (-0.05, 0.15), "z": (0.0, 0.0)},
             "velocity_range": {},
             "asset_cfg": SceneEntityCfg("left_object", body_names="left_Object"),
         },
