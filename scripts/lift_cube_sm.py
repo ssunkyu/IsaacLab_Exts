@@ -125,7 +125,7 @@ def infer_state_machine(
 
         # Define thresholds
         position_threshold = 0.03  # 1 cm
-        orientation_threshold = 0.05  # quaternion difference
+        orientation_threshold = 0.03  # quaternion difference
 
         # If position and orientation differences are within the threshold
         if pos_diff < position_threshold and quat_diff > (1.0 - orientation_threshold):
@@ -204,7 +204,7 @@ class PickAndLiftSm:
 
         # approach above object offset
         self.offset = torch.zeros((self.num_envs, 7), device=self.device)
-        self.offset[:, 2] = 0.15
+        self.offset[:, 2] = 0.1
         self.offset[:, -1] = 1.0  # warp expects quaternion as (x, y, z, w)
 
         # convert to warp
@@ -340,6 +340,10 @@ def main():
             # print(object_position[0], desired_orientation[0])
             # print(desired_position[0], desired_orientation[0])
             # print(actions[0,13])
+
+            # print(env.unwrapped.scene["robot"].data.joint_names[:])
+            # print(env.unwrapped.scene["robot"].data.joint_pos[0])
+            # print(env.unwrapped.scene["robot"].data.joint_vel[0])
 
             # reset state machine
             if dones.any():

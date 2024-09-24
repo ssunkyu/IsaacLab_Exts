@@ -32,7 +32,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
 
         self.actions.torso_action = mdp.JointPositionActionCfg(
             asset_name="robot", joint_names=["torso_0", "torso_1", "torso_2",
-                                             "torso_3", "torso_4", "torso_5"], scale=0.1, use_default_offset=False
+                                             "torso_3", "torso_4", "torso_5"], scale=1.0, use_default_offset=False
         )
 
         # Set actions for the specific robot type (Rby1)
@@ -58,7 +58,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         )
         self.actions.wheel_action = mdp.JointVelocityActionCfg(
             asset_name="robot",
-            joint_names=["right_wheel", "left_wheel"], scale=1.0, use_default_offset=True
+            joint_names=["right_wheel", "left_wheel"], scale=1.0, use_default_offset=True, offset=0,
         )
         # Set the body name for the end effector
         self.commands.right_object_pose.body_name = "ee_right"
@@ -67,7 +67,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         # Set Cube as object
         self.scene.right_object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/right_Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.50, -0.15, 1.05], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.55, -0.15, 0.80], rot=[1, 0, 0, 0]),
             spawn=UsdFileCfg(
                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
                 scale=(0.8, 0.8, 0.8),
@@ -83,7 +83,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         )
         self.scene.left_object = RigidObjectCfg(
             prim_path="{ENV_REGEX_NS}/left_Object",
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.50, 0.15, 1.05], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.55, 0.15, 0.80], rot=[1, 0, 0, 0]),
             spawn=UsdFileCfg(
                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
                 scale=(0.8, 0.8, 0.8),
@@ -109,7 +109,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
                     prim_path="{ENV_REGEX_NS}/Robot/ee_right",
-                    name="end_effector",
+                    name="right_end_effector",
                     offset=OffsetCfg(
                         pos=[0.0, 0.0, -0.17],
                     ),
@@ -123,7 +123,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
                     prim_path="{ENV_REGEX_NS}/Robot/ee_left",
-                    name="end_effector",
+                    name="left_end_effector",
                     offset=OffsetCfg(
                         pos=[0.0, 0.0, -0.17],
                     ),

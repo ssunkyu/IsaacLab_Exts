@@ -65,3 +65,22 @@ def object_goal_distance(
     distance = torch.norm(des_pos_w - object.data.root_pos_w[:, :3], dim=1)
     # rewarded if the object is lifted above the threshold
     return (object.data.root_pos_w[:, 2] > minimal_height) * (1 - torch.tanh(distance / std))
+
+
+def grip_object(
+    env: ManagerBasedRLEnv, object_cfg: SceneEntityCfg = SceneEntityCfg("object") , ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame")
+) -> torch.Tensor:
+    """Reward the agent for closing the gripper when object is within finger"""
+    object: RigidObject = env.scene[object_cfg.name]
+    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
+    # Target object position: (num_envs, 3)
+    cube_pos_w = object.data.root_pos_w
+    # End-effector position: (num_envs, 3)
+    ee_w = ee_frame.data.target_pos_w[..., 0, :]
+    # Distance of the end-effector to the object: (num_envs,)
+    object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
+
+
+    # add this line on top of existing object_ee_distance
+    reward = torch.where((object_ee_distance < 0.02) & (env.scene['robot'].data.joint_pos_target[:, 8] == 0), 1, -1)
+    return reward
