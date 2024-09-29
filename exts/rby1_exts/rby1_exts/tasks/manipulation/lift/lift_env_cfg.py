@@ -21,6 +21,8 @@ from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg
 from omni.isaac.lab.sim.spawners.shapes import CuboidCfg
 from omni.isaac.lab.utils import configclass
 from omni.isaac.lab.utils.assets import ISAAC_NUCLEUS_DIR
+from omni.isaac.lab.sensors import CameraCfg, TiledCameraCfg
+from omni.isaac.lab.envs.mdp.observations import grab_images
 
 from . import mdp
 
@@ -41,7 +43,10 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # end-effector sensor: will be populated by agent env cfg
     right_ee_frame: FrameTransformerCfg = MISSING
     left_ee_frame: FrameTransformerCfg = MISSING
-    
+
+    right_ee_camera_frame: FrameTransformerCfg = MISSING
+    left_ee_camera_frame: FrameTransformerCfg = MISSING
+
     # right_object_frame: FrameTransformerCfg = MISSING
     # left_object_frame: FrameTransformerCfg = MISSING
 
@@ -79,6 +84,9 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=3000.0),
     )
 
+    # camera
+    right_arm_camera: TiledCameraCfg = MISSING
+    left_arm_camera: TiledCameraCfg = MISSING 
 
 ##
 # MDP settings
@@ -136,8 +144,9 @@ class ObservationsCfg:
         left_object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame, params={"object_cfg": SceneEntityCfg("left_object")})
         right_target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "right_object_pose"})
         left_target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "left_object_pose"})
+        # image = ObsTerm(func=mdp.grab_images, params={"sensor_cfg": SceneEntityCfg("camera"), "data_type": "rgb"})
         actions = ObsTerm(func=mdp.last_action)
-
+              
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True

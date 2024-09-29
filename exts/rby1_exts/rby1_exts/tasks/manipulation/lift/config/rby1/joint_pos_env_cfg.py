@@ -3,11 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import RigidObjectCfg
 from omni.isaac.lab.sensors import FrameTransformerCfg
 from omni.isaac.lab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from omni.isaac.lab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from omni.isaac.lab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
+from omni.isaac.lab.sensors import TiledCameraCfg
 from omni.isaac.lab.utils import configclass
 from omni.isaac.lab.utils.assets import ISAAC_NUCLEUS_DIR
 
@@ -102,6 +104,7 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
         marker_cfg = FRAME_MARKER_CFG.copy()
         marker_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
         marker_cfg.prim_path = "/Visuals/FrameTransformer"
+
         self.scene.right_ee_frame = FrameTransformerCfg(
             prim_path="{ENV_REGEX_NS}/Robot/base",
             debug_vis=False,
@@ -128,6 +131,60 @@ class Rby1CubeLiftEnvCfg(LiftEnvCfg):
                         pos=[0.0, 0.0, -0.17],
                     ),
                 ),
+            ],
+        )
+        self.scene.right_arm_camera = TiledCameraCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/ee_right/right_camera",
+            update_period=0.1,
+            height=80,
+            width=80,
+            data_types=["rgb", "distance_to_image_plane",],
+            spawn=sim_utils.PinholeCameraCfg(
+                focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+            ),
+            offset=TiledCameraCfg.OffsetCfg(pos=(0.0, 0.0, -0.17), rot=(0, 0.7071068, 0.7071068, 0), convention="ros"),
+            debug_vis=True
+        )
+        self.scene.left_arm_camera = TiledCameraCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/ee_left/left_camera",
+            update_period=0.1,
+            height=80,
+            width=80,
+            data_types=["rgb", "distance_to_image_plane",],
+            spawn=sim_utils.PinholeCameraCfg(
+                focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+            ),
+            offset=TiledCameraCfg.OffsetCfg(pos=(0.0, 0.0, -0.17), rot=(0, 0.7071068, 0.7071068, 0), convention="ros"),
+            debug_vis=True
+        )
+        self.scene.right_ee_camera_frame = FrameTransformerCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/base",
+            debug_vis=False,
+            visualizer_cfg=marker_cfg,
+            target_frames=[
+                FrameTransformerCfg.FrameCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot/ee_right",
+                    name="right_arm_camera",
+                    offset=OffsetCfg(
+                        pos=[0.0, 0.0, -0.17],
+                        rot=[0, 0.7071068, 0.7071068, 0],
+                    ),
+                )
+            ],
+        )
+        self.scene.left_ee_camera_frame = FrameTransformerCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/base",
+            debug_vis=False,
+            visualizer_cfg=marker_cfg,
+            target_frames=[
+                FrameTransformerCfg.FrameCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot/ee_left",
+                    name="left_arm_camera",
+                    offset=OffsetCfg(
+                        pos=[0.0, 0.0, -0.17],
+                        rot=[0, 0.7071068, 0.7071068, 0],
+                    ),
+                )
             ],
         )
 

@@ -58,7 +58,7 @@ class Rby1CubeLiftEnvCfg(joint_pos_env_cfg.Rby1CubeLiftEnvCfg):
         # Set actions for the specific robot type (Rby1)
         self.actions.right_arm_action = DifferentialInverseKinematicsActionCfg(
             asset_name="robot",
-            joint_names=["right_arm_0", "right_arm_1", "right_arm_2", 
+            joint_names=["right_arm_0", "right_arm_1", "right_arm_2",
                          "right_arm_3", "right_arm_4", "right_arm_5", "right_arm_6"],
             body_name="ee_right",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, 
@@ -69,7 +69,7 @@ class Rby1CubeLiftEnvCfg(joint_pos_env_cfg.Rby1CubeLiftEnvCfg):
 
         self.actions.left_arm_action = DifferentialInverseKinematicsActionCfg(
             asset_name="robot",
-            joint_names=["left_arm_0", "left_arm_1", "left_arm_2", 
+            joint_names=["left_arm_0", "left_arm_1", "left_arm_2",
                          "left_arm_3", "left_arm_4", "left_arm_5", "left_arm_6"],
             body_name="ee_left",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, 

@@ -27,13 +27,19 @@ parser.add_argument(
     "--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations."
 )
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
+parser.add_argument(
+    "--draw",
+    action="store_true",
+    default=False,
+    help="Draw the pointcloud from camera at index specified by ``--camera_id``.",
+)
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
 args_cli = parser.parse_args()
 
 # launch omniverse app
-app_launcher = AppLauncher(headless=args_cli.headless)
+app_launcher = AppLauncher(headless=args_cli.headless, enable_cameras=True)
 simulation_app = app_launcher.app
 
 """Rest everything else."""
@@ -49,6 +55,9 @@ from omni.isaac.lab.assets.rigid_object.rigid_object_data import RigidObjectData
 import rby1_exts  # noqa: F401
 from rby1_exts.tasks.manipulation.lift.lift_env_cfg import LiftEnvCfg
 from omni.isaac.lab_tasks.utils.parse_cfg import parse_env_cfg
+from omni.isaac.lab.markers import VisualizationMarkers
+from omni.isaac.lab.markers.config import RAY_CASTER_MARKER_CFG
+from omni.isaac.lab.sensors.camera.utils import create_pointcloud_from_rgbd, create_pointcloud_from_depth
 
 # initialize warp
 wp.init()
@@ -264,19 +273,22 @@ def main():
         "Isaac-Lift-Cube-Rby1-IK-Abs-v0",
         device=args_cli.device,
         num_envs=args_cli.num_envs,
-        use_fabric=not args_cli.disable_fabric,
+        # use_fabric=not args_cli.disable_fabric,
     )
     # create environment
-    env = gym.make("Isaac-Lift-Cube-Rby1-IK-Abs-v0", cfg=env_cfg)
+    env = gym.make("Isaac-Lift-Cube-Rby1-IK-Abs-v0", cfg=env_cfg,
+                #    render_mode="human",
+                   )
     # reset environment at start
     env.reset()
+    env.render()
 
     # create action buffers (position + quaternion)
     actions = torch.zeros(env.unwrapped.action_space.shape, device=env.unwrapped.device)
     # actions[:, 3] = 1.0
 
     default_joint_pos = env.unwrapped.scene["robot"].data.default_joint_pos.clone()
-    print(default_joint_pos)
+    # print(default_joint_pos)
     actions[:, 0:6] = default_joint_pos[:, 2:8]
 
     # desired object orientation (we only do position control of object)
@@ -285,6 +297,12 @@ def main():
     # create state machine
     right_pick_sm = PickAndLiftSm(env_cfg.sim.dt * env_cfg.decimation, env.unwrapped.num_envs, env.unwrapped.device)
     left_pick_sm = PickAndLiftSm(env_cfg.sim.dt * env_cfg.decimation, env.unwrapped.num_envs, env.unwrapped.device)
+
+    # Create the markers for the --draw option outside of is_running() loop
+    if args_cli.draw:
+        cfg = RAY_CASTER_MARKER_CFG.replace(prim_path="/Visuals/CameraPointCloud")
+        cfg.markers["hit"].radius = 0.002
+        pc_markers = VisualizationMarkers(cfg)
 
     while simulation_app.is_running():
         # run everything in inference mode
@@ -295,9 +313,9 @@ def main():
             # observations
             # -- end-effector frame
             # right arm
-            ee_frame_sensor = env.unwrapped.scene["right_ee_frame"]
-            tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
-            tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
+            right_ee_frame_sensor = env.unwrapped.scene["right_ee_frame"]
+            tcp_rest_position = right_ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
+            tcp_rest_orientation = right_ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
             # -- object frame
             object_data: RigidObjectData = env.unwrapped.scene["right_object"].data
             object_position = object_data.root_pos_w - env.unwrapped.scene.env_origins
@@ -315,9 +333,9 @@ def main():
 
             ##########
             # left arm
-            ee_frame_sensor = env.unwrapped.scene["left_ee_frame"]
-            tcp_rest_position = ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
-            tcp_rest_orientation = ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
+            left_ee_frame_sensor = env.unwrapped.scene["left_ee_frame"]
+            tcp_rest_position = left_ee_frame_sensor.data.target_pos_w[..., 0, :].clone() - env.unwrapped.scene.env_origins
+            tcp_rest_orientation = left_ee_frame_sensor.data.target_quat_w[..., 0, :].clone()
             # -- object frame
             object_data: RigidObjectData = env.unwrapped.scene["left_object"].data
             object_position = object_data.root_pos_w - env.unwrapped.scene.env_origins
@@ -333,17 +351,19 @@ def main():
                 torch.cat([desired_position, desired_orientation], dim=-1),
             )
 
-            # print(env.unwrapped.scene.env_origins[0])
-
-            # print(actions)
-            # print(actions[0,6:9], actions[0,9:13])
-            # print(object_position[0], desired_orientation[0])
-            # print(desired_position[0], desired_orientation[0])
-            # print(actions[0,13])
-
-            # print(env.unwrapped.scene["robot"].data.joint_names[:])
-            # print(env.unwrapped.scene["robot"].data.joint_pos[0])
-            # print(env.unwrapped.scene["robot"].data.joint_vel[0])
+            # get rgbd pcd of [0] robot
+            left_ee_camera_frame_sensor = env.unwrapped.scene["left_ee_camera_frame"]
+            pointcloud = create_pointcloud_from_depth(
+                intrinsic_matrix=env.unwrapped.scene["left_arm_camera"].data.intrinsic_matrices[0],
+                depth=env.unwrapped.scene["left_arm_camera"].data.output[0]["distance_to_image_plane"],
+                position=left_ee_camera_frame_sensor.data.target_pos_w[0, 0, :].clone() - env.unwrapped.scene.env_origins[0],
+                orientation=left_ee_camera_frame_sensor.data.target_quat_w[0, 0, :].clone(),
+                device=env.unwrapped.device,
+            )
+            
+            # visualize pcd
+            if pointcloud.size()[0] > 0:
+                pc_markers.visualize(translations=pointcloud)
 
             # reset state machine
             if dones.any():
